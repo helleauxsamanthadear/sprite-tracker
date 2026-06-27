@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprite Locker — Collection Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1017;
+    --ink-2:#121722;
+    --surface:#161d2a;
+    --surface-2:#1c2536;
+    --line:#26303f;
+    --text:#e8eef6;
+    --muted:#8a97a8;
+    --faint:#5d6878;
+    --rare:#39bdf8;
+    --epic:#c084fc;
+    --legendary:#f5c24b;
+    --mythic:#ff8a3d;
+    --v-normal:#9da7b3;
+    --v-gold:#f5c24b;
+    --v-gummy:#ff7ab6;
+    --v-galaxy:#a87bff;
+    --good:#4ade80;
+    --display:'Space Grotesk',system-ui,sans-serif;
+    --body:system-ui,-apple-system,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--body);
+    background:
+      radial-gradient(1100px 600px at 78% -10%, rgba(168,123,255,.16), transparent 60%),
+      radial-gradient(900px 500px at 8% 0%, rgba(57,189,248,.12), transparent 55%),
+      var(--ink);
+    color:var(--text);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+
+  /* hero */
+  .hero{
+    display:flex;gap:26px;align-items:center;flex-wrap:wrap;
+    background:linear-gradient(180deg,rgba(28,37,54,.7),rgba(18,23,34,.55));
+    border:1px solid var(--line);border-radius:20px;padding:24px 26px;margin-bottom:22px;
+    position:relative;overflow:hidden;
+  }
+  .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 200px at 90% 120%,rgba(168,123,255,.18),transparent 70%);pointer-events:none}
+  .ring-wrap{position:relative;width:128px;height:128px;flex:0 0 auto}
+  .ring-wrap svg{transform:rotate(-90deg)}
+  .ring-bg{stroke:#222c3b;fill:none}
+  .ring-fg{stroke:url(#grad);fill:none;stroke-linecap:round;transition:stroke-dashoffset .7s cubic-bezier(.2,.7,.2,1)}
+  .ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring-pct{font-family:var(--display);font-weight:700;font-size:30px;line-height:1}
+  .ring-sub{font-size:11px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
+  .hero-meta{flex:1;min-width:220px}
+  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--v-galaxy);font-weight:600}
+  h1{font-family:var(--display);font-weight:700;font-size:30px;margin:6px 0 4px;letter-spacing:-.01em}
+  .hero-sub{color:var(--muted);font-size:14px;max-width:46ch;line-height:1.5}
+  .tally{display:flex;gap:22px;margin-top:16px;flex-wrap:wrap}
+  .tally div{display:flex;flex-direction:column}
+  .tally b{font-family:var(--display);font-size:20px;font-weight:600}
+  .tally span{font-size:11px;color:var(--faint);letter-spacing:.05em;text-transform:uppercase}
+
+  /* controls */
+  .controls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+  .search{flex:1;min-width:180px;position:relative}
+  .search input{
+    width:100%;background:var(--ink-2);border:1px solid var(--line);color:var(--text);
+    border-radius:11px;padding:11px 13px 11px 36px;font-size:14px;font-family:var(--body);outline:none;
+  }
+  .search input:focus{border-color:var(--v-galaxy);box-shadow:0 0 0 3px rgba(168,123,255,.18)}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--faint)}
+  .seg{display:flex;background:var(--ink-2);border:1px solid var(--line);border-radius:11px;padding:3px}
+  .seg button{
+    border:0;background:transparent;color:var(--muted);font-family:var(--body);font-size:13px;font-weight:500;
+    padding:7px 13px;border-radius:8px;cursor:pointer;transition:.15s;
+  }
+  .seg button.on{background:var(--surface-2);color:var(--text)}
+  .btn{
+    border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-family:var(--body);
+    font-size:13px;font-weight:500;padding:9px 14px;border-radius:11px;cursor:pointer;transition:.15s;
+    display:inline-flex;align-items:center;gap:7px;
+  }
+  .btn:hover{border-color:var(--v-galaxy)}
+  .btn-primary{background:linear-gradient(180deg,#7c5cff,#6a4bff);border-color:transparent}
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-ghost{background:transparent}
+
+  /* grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .card{
+    background:linear-gradient(180deg,var(--surface),var(--ink-2));
+    border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;position:relative;
+    transition:.18s;overflow:hidden;
+  }
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,#888)}
+  .card.done{border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
+  .card.done::after{content:"✓ Complete";position:absolute;top:13px;right:14px;font-size:10.5px;font-weight:600;letter-spacing:.05em;color:var(--good);text-transform:uppercase}
+  .card-top{display:flex;align-items:flex-start;gap:11px;margin-bottom:13px}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--accent,#888);margin-top:6px;flex:0 0 auto;box-shadow:0 0 12px var(--accent,#888)}
+  .card-name{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.15}
+  .card-rarity{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin-top:3px}
+  .edit-dots{margin-left:auto;background:transparent;border:0;color:var(--faint);cursor:pointer;padding:4px;border-radius:7px;font-size:18px;line-height:.5;letter-spacing:1px}
+  .edit-dots:hover{color:var(--text);background:var(--surface-2)}
+  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .pill{
+    border:1px solid var(--line);background:var(--ink);color:var(--muted);
+    font-size:12.5px;font-weight:500;padding:7px 12px;border-radius:9px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;transition:transform .12s,background .15s,border-color .15s,color .15s;user-select:none;
+  }
+  .pill .tick{width:13px;height:13px;border-radius:4px;border:1.5px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:transparent;flex:0 0 auto;transition:.15s}
+  .pill:hover{transform:translateY(-1px)}
+  .pill.on{color:#0d1017;font-weight:600;border-color:transparent}
+  .pill.on .tick{background:rgba(0,0,0,.28);border-color:transparent;color:#fff}
+  .pill.on[data-v="Normal"]{background:var(--v-normal)}
+  .pill.on[data-v="Gold"]{background:var(--v-gold)}
+  .pill.on[data-v="Gummy"]{background:var(--v-gummy)}
+  .pill.on[data-v="Galaxy"]{background:var(--v-galaxy)}
+  .pill.on:not([data-v="Normal"]):not([data-v="Gold"]):not([data-v="Gummy"]):not([data-v="Galaxy"]){background:var(--accent,#9da7b3)}
+  .pop{animation:pop .26s ease}
+  @keyframes pop{0%{transform:scale(.9)}55%{transform:scale(1.09)}100%{transform:scale(1)}}
+  .mini{height:5px;background:#1d2634;border-radius:99px;overflow:hidden}
+  .mini i{display:block;height:100%;background:var(--accent,#888);border-radius:99px;transition:width .4s}
+  .mini-row{display:flex;align-items:center;gap:10px}
+  .mini-row span{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .mini-row .mini{flex:1}
+
+  .empty{text-align:center;color:var(--muted);padding:60px 20px;border:1px dashed var(--line);border-radius:16px}
+  .empty b{display:block;font-family:var(--display);color:var(--text);font-size:17px;margin-bottom:5px}
+
+  /* modal */
+  .scrim{position:fixed;inset:0;background:rgba(6,9,14,.66);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .scrim.show{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:18px;width:100%;max-width:440px;padding:22px;max-height:88vh;overflow:auto}
+  .modal h3{font-family:var(--display);margin:0 0 16px;font-size:19px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .field input,.field select{width:100%;background:var(--ink-2);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:10px 12px;font-size:14px;font-family:var(--body);outline:none}
+  .field input:focus,.field select:focus{border-color:var(--v-galaxy)}
+  .vrow{display:flex;gap:8px;margin-bottom:8px}
+  .vrow input{flex:1}
+  .vrow button{flex:0 0 auto;border:1px solid var(--line);background:var(--ink-2);color:var(--muted);border-radius:9px;width:38px;cursor:pointer;font-size:16px}
+  .vrow button:hover{color:#ff7a7a;border-color:#ff7a7a}
+  .add-v{font-size:13px;color:var(--v-galaxy);background:transparent;border:0;cursor:pointer;padding:4px 0;font-weight:500}
+  .modal-actions{display:flex;gap:10px;margin-top:20px}
+  .modal-actions .btn{flex:1;justify-content:center}
+  .danger{color:#ff7a7a;border-color:transparent;background:transparent;margin-right:auto;padding-left:0}
+  .danger:hover{border-color:#ff7a7a}
+
+  .savechip{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface-2);border:1px solid var(--line);color:var(--muted);padding:8px 15px;border-radius:99px;font-size:12.5px;opacity:0;transition:.3s;pointer-events:none;z-index:60}
+  .savechip.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .foot{margin-top:26px;color:var(--faint);font-size:12px;line-height:1.6;text-align:center}
+  @media(max-width:560px){
+    .hero{gap:18px;padding:20px}
+    h1{font-size:24px}
+    .ring-wrap{width:104px;height:104px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section class="hero">
+    <div class="ring-wrap">
+      <svg width="128" height="128" viewBox="0 0 128 128">
+        <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#39bdf8"/><stop offset="1" stop-color="#a87bff"/>
+        </linearGradient></defs>
+        <circle class="ring-bg" cx="64" cy="64" r="56" stroke-width="11"/>
+        <circle class="ring-fg" id="ring" cx="64" cy="64" r="56" stroke-width="11"
+                stroke-dasharray="351.9" stroke-dashoffset="351.9"/>
+      </svg>
+      <div class="ring-label"><div class="ring-pct" id="ringPct">0%</div><div class="ring-sub">Locker</div></div>
+    </div>
+    <div class="hero-meta">
+      <div class="eyebrow">Chapter 7 · Season 3 · Runners</div>
+      <h1>Sprite Locker</h1>
+      <p class="hero-sub">Tap a variant to mark it extracted. Your progress saves automatically. Edit any sprite as new ones drop each update.</p>
+      <div class="tally">
+        <div><b id="tCollected">0</b><span>Extracted</span></div>
+        <div><b id="tTotal">0</b><span>Total</span></div>
+        <div><b id="tSprites">0</b><span>Sprites done</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="controls">
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="search" placeholder="Search sprites…" autocomplete="off">
+    </div>
+    <div class="seg" id="filter">
+      <button data-f="all" class="on">All</button>
+      <button data-f="todo">In progress</button>
+      <button data-f="done">Complete</button>
+    </div>
+    <button class="btn btn-primary" id="addBtn">＋ Add sprite</button>
+    <button class="btn btn-ghost" id="exportBtn" title="Save a backup file of your progress">Export</button>
+    <button class="btn btn-ghost" id="importBtn" title="Restore progress from a backup file">Import</button>
+    <button class="btn btn-ghost" id="resetBtn">Reset</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <p class="foot">
+    Roster reflects Chapter 7 Season 3 as of late June 2026 — best effort, and Epic keeps adding more.
+    Rarities are approximate; edit anything that's off. Nothing here is official or affiliated with Epic Games.
+  </p>
+</div>
+
+<!-- editor modal -->
+<div class="scrim" id="scrim">
+  <div class="modal">
+    <h3 id="modalTitle">Edit sprite</h3>
+    <div class="field"><label>Name</label><input id="mName" placeholder="e.g. Striker"></div>
+    <div class="field"><label>Element accent</label><input id="mColor" type="color" value="#a87bff" style="height:42px;padding:4px"></div>
+    <div class="field"><label>Rarity</label>
+      <select id="mRarity">
+        <option>Rare</option><option>Epic</option><option>Legendary</option><option>Mythic</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Variants to collect</label>
+      <div id="mVariants"></div>
+      <button class="add-v" id="addVariant">＋ Add variant</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn danger" id="deleteBtn">Delete</button>
+      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="savechip" id="savechip">Saved</div>
+
+<script>
+const STORE_KEY = 'fn-sprite-locker-v1';
+const DEFAULT_VARIANTS = ['Normal','Gold','Gummy','Galaxy'];
+
+const SEED = [
+  {name:'Earth',      color:'#4ade80', rarity:'Rare',      variants:DEFAULT_VARIANTS},
+  {name:'Fire',       color:'#ff6b3d', rarity:'Rare',      variants:DEFAULT_VARIANTS},
+  {name:'Water',      color:'#38bdf8', rarity:'Rare',      variants:DEFAULT_VARIANTS},
+  {name:'Duck',       color:'#facc15', rarity:'Rare',      variants:DEFAULT_VARIANTS},
+  {name:'Fishy',      color:'#22d3ee', rarity:'Rare',      variants:DEFAULT_VARIANTS},
+  {name:'Demon',      color:'#c084fc', rarity:'Epic',      variants:DEFAULT_VARIANTS},
+  {name:'Dream',      color:'#818cf8', rarity:'Epic',      variants:DEFAULT_VARIANTS},
+  {name:'Ghost',      color:'#94a3b8', rarity:'Epic',      variants:DEFAULT_VARIANTS},
+  {name:'Punk',       color:'#f472b6', rarity:'Epic',      variants:DEFAULT_VARIANTS},
+  {name:'Striker',    color:'#34d399', rarity:'Epic',      variants:DEFAULT_VARIANTS},
+  {name:'King',       color:'#fbbf24', rarity:'Legendary', variants:DEFAULT_VARIANTS},
+  {name:'Aura',       color:'#a78bfa', rarity:'Legendary', variants:DEFAULT_VARIANTS},
+  {name:'Boss',       color:'#ef4444', rarity:'Legendary', variants:DEFAULT_VARIANTS},
+  {name:'Grim Reaper',color:'#6b7280', rarity:'Legendary', variants:DEFAULT_VARIANTS},
+  {name:'Zero Point', color:'#2dd4bf', rarity:'Mythic',    variants:DEFAULT_VARIANTS},
+  {name:'Burnt Peanut',color:'#b45309',rarity:'Mythic',    variants:['Normal']},
+];
+
+let state = { sprites: [], collected: {} }; // collected: { "<id>:<variant>": true }
+let view = { filter:'all', q:'' };
+let editingId = null;
+let memoryOnly = false;
+
+const $ = s => document.querySelector(s);
+const uid = () => 'sp_' + Math.random().toString(36).slice(2,9);
+const key = (id,v) => id + ':' + v;
+const rarityColor = r => ({Rare:'var(--rare)',Epic:'var(--epic)',Legendary:'var(--legendary)',Mythic:'var(--mythic)'}[r]||'var(--muted)');
+
+function seedState(){
+  state.sprites = SEED.map(s => ({id:uid(), ...s, variants:[...s.variants]}));
+  state.collected = {};
+}
+
+/* ---------- persistence ----------
+   Saves in the best place available, in order:
+   1) Claude's artifact storage (inside this chat)
+   2) your browser's localStorage (when hosted on a site / your phone)
+   3) memory only (last resort, this session) */
+const hasWS = typeof window!=='undefined' && window.storage && typeof window.storage.get==='function';
+
+async function storeGet(k){
+  if(hasWS){ try{ const r=await window.storage.get(k); return r?r.value:null; }catch(e){} }
+  try{ return localStorage.getItem(k); }catch(e){ memoryOnly=true; return null; }
+}
+async function storeSet(k,v){
+  if(hasWS){ try{ await window.storage.set(k,v); return; }catch(e){} }
+  try{ localStorage.setItem(k,v); }catch(e){ memoryOnly=true; }
+}
+
+async function load(){
+  const raw = await storeGet(STORE_KEY);
+  if(raw){ try{ state = JSON.parse(raw); return; }catch(e){} }
+  seedState();
+  await save(true);
+}
+let saveT;
+async function save(silent){
+  await storeSet(STORE_KEY, JSON.stringify(state));
+  if(!silent) flashSaved();
+}
+function queueSave(){ clearTimeout(saveT); saveT = setTimeout(()=>save(false), 250); }
+function toast(msg, ms=1800){
+  const c = $('#savechip');
+  c.textContent = msg;
+  c.classList.add('show'); clearTimeout(c._t); c._t = setTimeout(()=>c.classList.remove('show'), ms);
+}
+function flashSaved(){ toast(memoryOnly ? 'Saved for this session' : 'Saved', 1400); }
+
+/* ---------- back up / restore ---------- */
+function exportData(){
+  const stamp = new Date().toISOString().slice(0,10);
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `sprite-locker-backup-${stamp}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast('Backup downloaded');
+}
+function importData(file){
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try{ data = JSON.parse(reader.result); }catch(e){ return toast('Couldn’t read that file'); }
+    if(!data || !Array.isArray(data.sprites) || typeof data.collected !== 'object' || !data.collected){
+      return toast('That isn’t a Sprite Locker backup');
+    }
+    data.sprites.forEach(s=>{ if(!s.id) s.id = uid(); if(!Array.isArray(s.variants)) s.variants = []; });
+    state = { sprites: data.sprites, collected: data.collected };
+    render(); save(false); toast('Progress restored');
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- derived ---------- */
+function counts(){
+  let total=0, got=0, spritesDone=0;
+  for(const s of state.sprites){
+    let sg=0;
+    for(const v of s.variants){ total++; if(state.collected[key(s.id,v)]){got++;sg++;} }
+    if(s.variants.length && sg===s.variants.length) spritesDone++;
+  }
+  return {total,got,spritesDone};
+}
+
+/* ---------- render ---------- */
+function render(){
+  const {total,got,spritesDone} = counts();
+  const pct = total ? Math.round(got/total*100) : 0;
+  const circ = 2*Math.PI*56;
+  $('#ring').setAttribute('stroke-dasharray', circ.toFixed(1));
+  $('#ring').setAttribute('stroke-dashoffset', (circ*(1-pct/100)).toFixed(1));
+  $('#ringPct').textContent = pct+'%';
+  $('#tCollected').textContent = got;
+  $('#tTotal').textContent = total;
+  $('#tSprites').textContent = spritesDone+' / '+state.sprites.length;
+
+  const grid = $('#grid');
+  const q = view.q.trim().toLowerCase();
+  const list = state.sprites.filter(s=>{
+    if(q && !s.name.toLowerCase().includes(q)) return false;
+    const sg = s.variants.filter(v=>state.collected[key(s.id,v)]).length;
+    const done = s.variants.length && sg===s.variants.length;
+    if(view.filter==='done') return done;
+    if(view.filter==='todo') return !done;
+    return true;
+  });
+
+  if(!list.length){
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><b>Nothing here</b>${
+      state.sprites.length ? 'No sprites match this filter.' : 'Add your first sprite to start tracking.'}</div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(s=>{
+    const sg = s.variants.filter(v=>state.collected[key(s.id,v)]).length;
+    const done = s.variants.length && sg===s.variants.length;
+    const w = s.variants.length ? Math.round(sg/s.variants.length*100) : 0;
+    const pills = s.variants.map(v=>{
+      const on = !!state.collected[key(s.id,v)];
+      return `<button class="pill ${on?'on':''}" data-v="${esc(v)}" data-id="${s.id}" data-variant="${esc(v)}">
+        <span class="tick">✓</span>${esc(v)}</button>`;
+    }).join('');
+    return `<div class="card ${done?'done':''}" style="--accent:${esc(s.color)}">
+      <div class="card-top">
+        <span class="dot"></span>
+        <div>
+          <div class="card-name">${esc(s.name)}</div>
+          <div class="card-rarity" style="color:${rarityColor(s.rarity)}">${esc(s.rarity)}</div>
+        </div>
+        <button class="edit-dots" data-edit="${s.id}" title="Edit">⋯</button>
+      </div>
+      <div class="pills">${pills || '<span style="color:var(--faint);font-size:12px">No variants</span>'}</div>
+      <div class="mini-row"><span>${sg}/${s.variants.length}</span><div class="mini"><i style="width:${w}%"></i></div></div>
+    </div>`;
+  }).join('');
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+/* ---------- interactions ---------- */
+$('#grid').addEventListener('click', e=>{
+  const pill = e.target.closest('.pill');
+  if(pill){
+    const k = key(pill.dataset.id, pill.dataset.variant);
+    if(state.collected[k]) delete state.collected[k]; else state.collected[k]=true;
+    pill.classList.add('pop'); setTimeout(()=>pill.classList.remove('pop'),260);
+    render(); queueSave(); return;
+  }
+  const ed = e.target.closest('[data-edit]');
+  if(ed){ openEditor(ed.dataset.edit); }
+});
+
+$('#search').addEventListener('input', e=>{ view.q=e.target.value; render(); });
+$('#filter').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  view.filter=b.dataset.f;
+  [...$('#filter').children].forEach(x=>x.classList.toggle('on',x===b));
+  render();
+});
+$('#resetBtn').addEventListener('click', ()=>{
+  if(confirm('Reset to the default Season 3 roster? This clears your progress and any edits.')){
+    seedState(); render(); save(false);
+  }
+});
+$('#exportBtn').addEventListener('click', exportData);
+$('#importBtn').addEventListener('click', ()=>$('#importFile').click());
+$('#importFile').addEventListener('change', e=>{
+  if(e.target.files[0]) importData(e.target.files[0]);
+  e.target.value = '';
+});
+
+/* ---------- editor ---------- */
+$('#addBtn').addEventListener('click', ()=>openEditor(null));
+$('#cancelBtn').addEventListener('click', closeEditor);
+$('#scrim').addEventListener('click', e=>{ if(e.target===$('#scrim')) closeEditor(); });
+
+function openEditor(id){
+  editingId = id;
+  const s = id ? state.sprites.find(x=>x.id===id) : null;
+  $('#modalTitle').textContent = s ? 'Edit sprite' : 'Add sprite';
+  $('#mName').value = s ? s.name : '';
+  $('#mColor').value = s ? toHex(s.color) : '#a87bff';
+  $('#mRarity').value = s ? s.rarity : 'Rare';
+  renderVariantRows(s ? s.variants : ['Normal','Gold','Gummy','Galaxy']);
+  $('#deleteBtn').style.display = s ? '' : 'none';
+  $('#scrim').classList.add('show');
+  setTimeout(()=>$('#mName').focus(),30);
+}
+function closeEditor(){ $('#scrim').classList.remove('show'); editingId=null; }
+function toHex(c){ return /^#[0-9a-f]{6}$/i.test(c) ? c : '#a87bff'; }
+
+function renderVariantRows(vars){
+  $('#mVariants').innerHTML = vars.map(v=>`
+    <div class="vrow"><input value="${esc(v)}" placeholder="Variant name"><button type="button" class="rmv">×</button></div>
+  `).join('');
+  $('#mVariants').querySelectorAll('.rmv').forEach(b=>b.onclick=()=>b.closest('.vrow').remove());
+}
+$('#addVariant').addEventListener('click', ()=>{
+  const div=document.createElement('div'); div.className='vrow';
+  div.innerHTML='<input placeholder="Variant name"><button type="button" class="rmv">×</button>';
+  div.querySelector('.rmv').onclick=()=>div.remove();
+  $('#mVariants').appendChild(div); div.querySelector('input').focus();
+});
+$('#saveBtn').addEventListener('click', ()=>{
+  const name=$('#mName').value.trim();
+  if(!name){ $('#mName').focus(); return; }
+  const variants=[...$('#mVariants').querySelectorAll('input')].map(i=>i.value.trim()).filter(Boolean);
+  const data={name, color:$('#mColor').value, rarity:$('#mRarity').value, variants:[...new Set(variants)]};
+  if(editingId){
+    const s=state.sprites.find(x=>x.id===editingId);
+    // drop collected entries for removed variants
+    Object.keys(state.collected).forEach(k=>{
+      if(k.startsWith(editingId+':') && !data.variants.includes(k.slice(editingId.length+1))) delete state.collected[k];
+    });
+    Object.assign(s,data);
+  }else{
+    state.sprites.push({id:uid(), ...data});
+  }
+  closeEditor(); render(); save(false);
+});
+$('#deleteBtn').addEventListener('click', ()=>{
+  if(!editingId) return;
+  if(confirm('Delete this sprite and its progress?')){
+    state.sprites = state.sprites.filter(x=>x.id!==editingId);
+    Object.keys(state.collected).forEach(k=>{ if(k.startsWith(editingId+':')) delete state.collected[k]; });
+    closeEditor(); render(); save(false);
+  }
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeEditor(); });
+
+/* ---------- boot ---------- */
+(async()=>{ await load(); render(); })();
+</script>
+</body>
+</html>
