@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sprite Locker — Collection Tracker</title>
+<title>Battle Baddies' Sprite Locker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -101,30 +101,39 @@
   }
   .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,#888)}
   .card.done{border-color:color-mix(in srgb,var(--good) 45%,var(--line))}
-  .card.done::after{content:"✓ Complete";position:absolute;top:13px;right:14px;font-size:10.5px;font-weight:600;letter-spacing:.05em;color:var(--good);text-transform:uppercase}
+  .card.done::after{content:"✓ Maxed";position:absolute;top:13px;right:14px;font-size:10.5px;font-weight:600;letter-spacing:.05em;color:var(--good);text-transform:uppercase}
   .card-top{display:flex;align-items:flex-start;gap:11px;margin-bottom:13px}
   .dot{width:11px;height:11px;border-radius:50%;background:var(--accent,#888);margin-top:6px;flex:0 0 auto;box-shadow:0 0 12px var(--accent,#888)}
   .card-name{font-family:var(--display);font-weight:600;font-size:17px;line-height:1.15}
   .card-rarity{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;margin-top:3px}
   .edit-dots{margin-left:auto;background:transparent;border:0;color:var(--faint);cursor:pointer;padding:4px;border-radius:7px;font-size:18px;line-height:.5;letter-spacing:1px}
   .edit-dots:hover{color:var(--text);background:var(--surface-2)}
-  .pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-  .pill{
-    border:1px solid var(--line);background:var(--ink);color:var(--muted);
-    font-size:12.5px;font-weight:500;padding:7px 12px;border-radius:9px;cursor:pointer;
-    display:inline-flex;align-items:center;gap:7px;transition:transform .12s,background .15s,border-color .15s,color .15s;user-select:none;
-  }
-  .pill .tick{width:13px;height:13px;border-radius:4px;border:1.5px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:transparent;flex:0 0 auto;transition:.15s}
-  .pill:hover{transform:translateY(-1px)}
-  .pill.on{color:#0d1017;font-weight:600;border-color:transparent}
-  .pill.on .tick{background:rgba(0,0,0,.28);border-color:transparent;color:#fff}
-  .pill.on[data-v="Normal"]{background:var(--v-normal)}
-  .pill.on[data-v="Gold"]{background:var(--v-gold)}
-  .pill.on[data-v="Gummy"]{background:var(--v-gummy)}
-  .pill.on[data-v="Galaxy"]{background:var(--v-galaxy)}
-  .pill.on:not([data-v="Normal"]):not([data-v="Gold"]):not([data-v="Gummy"]):not([data-v="Galaxy"]){background:var(--accent,#9da7b3)}
+  .vlist{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
+  .vrow2{display:flex;align-items:center;gap:10px}
+  .vtog{display:inline-flex;align-items:center;gap:6px;flex:0 0 94px;max-width:94px;border:1px solid var(--line);background:var(--ink);color:var(--muted);font-size:12px;font-weight:600;padding:5px 9px;border-radius:8px;cursor:pointer;white-space:nowrap;overflow:hidden;transition:transform .12s,background .15s,border-color .15s,color .15s;user-select:none}
+  .vtog:hover{transform:translateY(-1px);border-color:var(--accent,#888)}
+  .vtog .tk{width:13px;height:13px;border-radius:4px;border:1.5px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:9px;color:transparent;flex:0 0 auto;transition:.15s}
+  .vtog .nm{overflow:hidden;text-overflow:ellipsis}
+  .vtog.on{color:#0d1017;border-color:transparent}
+  .vtog.on .tk{background:rgba(0,0,0,.28);border-color:transparent;color:#fff}
+  .vtog.on[data-v="Normal"]{background:var(--v-normal)}
+  .vtog.on[data-v="Gold"]{background:var(--v-gold)}
+  .vtog.on[data-v="Gummy"]{background:var(--v-gummy)}
+  .vtog.on[data-v="Galaxy"]{background:var(--v-galaxy)}
+  .vtog.on:not([data-v="Normal"]):not([data-v="Gold"]):not([data-v="Gummy"]):not([data-v="Galaxy"]){background:var(--accent,#9da7b3)}
+  .rank{display:flex;gap:4px}
+  .rp{width:18px;height:11px;border-radius:3px;border:1.5px solid var(--line);background:var(--ink);cursor:pointer;padding:0;transition:transform .1s,background .14s,border-color .14s,box-shadow .14s}
+  .rp:hover{transform:translateY(-1px)}
+  .rp.on{border-color:transparent}
+  .rp.on[data-v="Normal"]{background:var(--v-normal)}
+  .rp.on[data-v="Gold"]{background:var(--v-gold);box-shadow:0 0 8px -3px var(--v-gold)}
+  .rp.on[data-v="Gummy"]{background:var(--v-gummy);box-shadow:0 0 8px -3px var(--v-gummy)}
+  .rp.on[data-v="Galaxy"]{background:var(--v-galaxy);box-shadow:0 0 8px -3px var(--v-galaxy)}
+  .rp.on:not([data-v="Normal"]):not([data-v="Gold"]):not([data-v="Gummy"]):not([data-v="Galaxy"]){background:var(--accent,#9da7b3)}
+  .vlvl{font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums;margin-left:auto;flex:0 0 auto;min-width:30px;text-align:right}
+  .vlvl.max{color:var(--good);font-weight:600}
   .pop{animation:pop .26s ease}
-  @keyframes pop{0%{transform:scale(.9)}55%{transform:scale(1.09)}100%{transform:scale(1)}}
+  @keyframes pop{0%{transform:scale(.86)}55%{transform:scale(1.12)}100%{transform:scale(1)}}
   .mini{height:5px;background:#1d2634;border-radius:99px;overflow:hidden}
   .mini i{display:block;height:100%;background:var(--accent,#888);border-radius:99px;transition:width .4s}
   .mini-row{display:flex;align-items:center;gap:10px}
@@ -180,12 +189,13 @@
     </div>
     <div class="hero-meta">
       <div class="eyebrow">Chapter 7 · Season 3 · Runners</div>
-      <h1>Battle Baddies Sprite Tracker</h1>
-      <p class="hero-sub">Tap a variant to mark it extracted. Your progress saves automatically. Edit any sprite as new ones drop each update.</p>
+      <h1>Battle Baddies' Sprite Locker</h1>
+      <p class="hero-sub">Click a variant to mark it owned (auto Lv 1), then tap its bar to rank up to 5. Saves automatically — edit any sprite as new ones drop.</p>
       <div class="tally">
-        <div><b id="tCollected">0</b><span>Extracted</span></div>
-        <div><b id="tTotal">0</b><span>Total</span></div>
-        <div><b id="tSprites">0</b><span>Sprites done</span></div>
+        <div><b id="tCollected">0</b><span>Owned</span></div>
+        <div><b id="tTotal">0</b><span>Total variants</span></div>
+        <div><b id="tSprites">0</b><span>Sprites maxed</span></div>
+        <div><b id="tMaxed">0</b><span>Variants maxed</span></div>
       </div>
     </div>
   </section>
@@ -197,8 +207,8 @@
     </div>
     <div class="seg" id="filter">
       <button data-f="all" class="on">All</button>
-      <button data-f="todo">In progress</button>
-      <button data-f="done">Complete</button>
+      <button data-f="todo">Needs work</button>
+      <button data-f="done">Maxed</button>
     </div>
     <button class="btn btn-primary" id="addBtn">＋ Add sprite</button>
     <button class="btn btn-ghost" id="exportBtn" title="Save a backup file of your progress">Export</button>
@@ -264,7 +274,7 @@ const SEED = [
   {name:'Burnt Peanut',color:'#b45309',rarity:'Mythic',    variants:['Normal']},
 ];
 
-let state = { sprites: [], collected: {} }; // collected: { "<id>:<variant>": true }
+let state = { sprites: [], collected: {} }; // collected: { "<id>:<variant>": 1..5 }  (rank; >=1 means owned)
 let view = { filter:'all', q:'' };
 let editingId = null;
 let memoryOnly = false;
@@ -272,11 +282,24 @@ let memoryOnly = false;
 const $ = s => document.querySelector(s);
 const uid = () => 'sp_' + Math.random().toString(36).slice(2,9);
 const key = (id,v) => id + ':' + v;
+const isMaxed = s => s.variants.length>0 && s.variants.every(v=>(state.collected[key(s.id,v)]||0)>=5);
 const rarityColor = r => ({Rare:'var(--rare)',Epic:'var(--epic)',Legendary:'var(--legendary)',Mythic:'var(--mythic)'}[r]||'var(--muted)');
 
 function seedState(){
   state.sprites = SEED.map(s => ({id:uid(), ...s, variants:[...s.variants]}));
   state.collected = {};
+}
+// Coerce any legacy data (old boolean checkmarks / per-sprite levels) into the rank model.
+function normalizeRanks(){
+  if(!state.collected || typeof state.collected !== 'object') state.collected = {};
+  for(const k in state.collected){
+    let v = state.collected[k];
+    if(v === true) v = 1;
+    v = Math.round(Number(v));
+    if(!v || v < 1){ delete state.collected[k]; continue; }
+    state.collected[k] = Math.min(5, v);
+  }
+  delete state.levels; // retired: rank now lives per-variant inside collected
 }
 
 /* ---------- persistence ----------
@@ -297,7 +320,7 @@ async function storeSet(k,v){
 
 async function load(){
   const raw = await storeGet(STORE_KEY);
-  if(raw){ try{ state = JSON.parse(raw); return; }catch(e){} }
+  if(raw){ try{ state = JSON.parse(raw); normalizeRanks(); return; }catch(e){} }
   seedState();
   await save(true);
 }
@@ -335,6 +358,7 @@ function importData(file){
     }
     data.sprites.forEach(s=>{ if(!s.id) s.id = uid(); if(!Array.isArray(s.variants)) s.variants = []; });
     state = { sprites: data.sprites, collected: data.collected };
+    normalizeRanks();
     render(); save(false); toast('Progress restored');
   };
   reader.readAsText(file);
@@ -342,18 +366,23 @@ function importData(file){
 
 /* ---------- derived ---------- */
 function counts(){
-  let total=0, got=0, spritesDone=0;
+  let total=0, got=0, spritesDone=0, maxed=0;
   for(const s of state.sprites){
-    let sg=0;
-    for(const v of s.variants){ total++; if(state.collected[key(s.id,v)]){got++;sg++;} }
-    if(s.variants.length && sg===s.variants.length) spritesDone++;
+    let owned=0;
+    for(const v of s.variants){
+      total++;
+      const r = state.collected[key(s.id,v)] || 0;
+      if(r>=1){ got++; owned++; }
+      if(r>=5) maxed++;
+    }
+    if(isMaxed(s)) spritesDone++;
   }
-  return {total,got,spritesDone};
+  return {total,got,spritesDone,maxed};
 }
 
 /* ---------- render ---------- */
 function render(){
-  const {total,got,spritesDone} = counts();
+  const {total,got,spritesDone,maxed} = counts();
   const pct = total ? Math.round(got/total*100) : 0;
   const circ = 2*Math.PI*56;
   $('#ring').setAttribute('stroke-dasharray', circ.toFixed(1));
@@ -362,15 +391,15 @@ function render(){
   $('#tCollected').textContent = got;
   $('#tTotal').textContent = total;
   $('#tSprites').textContent = spritesDone+' / '+state.sprites.length;
+  $('#tMaxed').textContent = maxed+' / '+total;
 
   const grid = $('#grid');
   const q = view.q.trim().toLowerCase();
   const list = state.sprites.filter(s=>{
     if(q && !s.name.toLowerCase().includes(q)) return false;
-    const sg = s.variants.filter(v=>state.collected[key(s.id,v)]).length;
-    const done = s.variants.length && sg===s.variants.length;
-    if(view.filter==='done') return done;
-    if(view.filter==='todo') return !done;
+    const maxed = isMaxed(s);
+    if(view.filter==='done') return maxed;
+    if(view.filter==='todo') return !maxed;
     return true;
   });
 
@@ -381,13 +410,22 @@ function render(){
   }
 
   grid.innerHTML = list.map(s=>{
-    const sg = s.variants.filter(v=>state.collected[key(s.id,v)]).length;
-    const done = s.variants.length && sg===s.variants.length;
-    const w = s.variants.length ? Math.round(sg/s.variants.length*100) : 0;
-    const pills = s.variants.map(v=>{
-      const on = !!state.collected[key(s.id,v)];
-      return `<button class="pill ${on?'on':''}" data-v="${esc(v)}" data-id="${s.id}" data-variant="${esc(v)}">
-        <span class="tick">✓</span>${esc(v)}</button>`;
+    const owned = s.variants.filter(v=>(state.collected[key(s.id,v)]||0)>=1).length;
+    const done = isMaxed(s);
+    const w = s.variants.length ? Math.round(owned/s.variants.length*100) : 0;
+    const vrows = s.variants.map(v=>{
+      const r = state.collected[key(s.id,v)] || 0;
+      const pips = [1,2,3,4,5].map(n=>
+        `<button class="rp ${n<=r?'on':''}" data-v="${esc(v)}" data-id="${s.id}" data-variant="${esc(v)}" data-rank="${n}" aria-label="${esc(v)} rank ${n}"></button>`
+      ).join('');
+      const lab = r>=5 ? 'MAX' : (r ? 'Lv '+r : '—');
+      return `<div class="vrow2">
+        <button class="vtog ${r>=1?'on':''}" data-v="${esc(v)}" data-id="${s.id}" data-variant="${esc(v)}" data-toggle="1" title="${esc(v)} — click to toggle owned">
+          <span class="tk">✓</span><span class="nm">${esc(v)}</span>
+        </button>
+        <div class="rank">${pips}</div>
+        <span class="vlvl ${r>=5?'max':''}">${lab}</span>
+      </div>`;
     }).join('');
     return `<div class="card ${done?'done':''}" style="--accent:${esc(s.color)}">
       <div class="card-top">
@@ -398,8 +436,8 @@ function render(){
         </div>
         <button class="edit-dots" data-edit="${s.id}" title="Edit">⋯</button>
       </div>
-      <div class="pills">${pills || '<span style="color:var(--faint);font-size:12px">No variants</span>'}</div>
-      <div class="mini-row"><span>${sg}/${s.variants.length}</span><div class="mini"><i style="width:${w}%"></i></div></div>
+      <div class="vlist">${vrows || '<span style="color:var(--faint);font-size:12px">No variants</span>'}</div>
+      <div class="mini-row"><span>${owned}/${s.variants.length} owned</span><div class="mini"><i style="width:${w}%"></i></div></div>
     </div>`;
   }).join('');
 }
@@ -407,11 +445,21 @@ function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 
 /* ---------- interactions ---------- */
 $('#grid').addEventListener('click', e=>{
-  const pill = e.target.closest('.pill');
-  if(pill){
-    const k = key(pill.dataset.id, pill.dataset.variant);
-    if(state.collected[k]) delete state.collected[k]; else state.collected[k]=true;
-    pill.classList.add('pop'); setTimeout(()=>pill.classList.remove('pop'),260);
+  const tg = e.target.closest('.vtog');
+  if(tg){
+    const k = key(tg.dataset.id, tg.dataset.variant);
+    if((state.collected[k]||0) >= 1) delete state.collected[k];  // owned -> clear it
+    else state.collected[k] = 1;                                  // not owned -> auto Lv 1
+    tg.classList.add('pop'); setTimeout(()=>tg.classList.remove('pop'),260);
+    render(); queueSave(); return;
+  }
+  const rp = e.target.closest('.rp');
+  if(rp){
+    const k = key(rp.dataset.id, rp.dataset.variant);
+    const n = +rp.dataset.rank, cur = state.collected[k] || 0;
+    const next = (n === cur) ? n - 1 : n;   // tap the current top pip to step down; tapping pip 1 at rank 1 clears it
+    if(next <= 0) delete state.collected[k]; else state.collected[k] = next;
+    rp.classList.add('pop'); setTimeout(()=>rp.classList.remove('pop'),260);
     render(); queueSave(); return;
   }
   const ed = e.target.closest('[data-edit]');
@@ -499,5 +547,17 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeEditor(); })
 /* ---------- boot ---------- */
 (async()=>{ await load(); render(); })();
 </script>
+
+<!-- ============================================================
+     VISIT COUNTER (GoatCounter) — anonymous page views, no cookies.
+     SETUP: 1) sign up free at https://www.goatcounter.com (pick a code,
+               e.g. "samanthas-sprites"); your dashboard is then at
+               https://samanthas-sprites.goatcounter.com
+            2) replace YOURCODE below with that code.
+            3) re-upload this file. View counts on your GoatCounter dashboard.
+     Until you do step 2 it simply does nothing — the app works fine either way.
+============================================================ -->
+<script data-goatcounter="https://YOURCODE.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
