@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Battle Baddies' Sprite Locker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,8 +52,8 @@
     position:relative;overflow:hidden;
   }
   .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 200px at 90% 120%,rgba(168,123,255,.18),transparent 70%);pointer-events:none}
-  .ring-wrap{position:relative;width:128px;height:128px;flex:0 0 auto}
-  .ring-wrap svg{transform:rotate(-90deg)}
+  .ring-wrap{position:relative;width:118px;height:118px;flex:0 0 auto}
+  .ring-wrap svg{width:100%;height:100%;display:block;transform:rotate(-90deg)}
   .ring-bg{stroke:#222c3b;fill:none}
   .ring-fg{stroke:url(#grad);fill:none;stroke-linecap:round;transition:stroke-dashoffset .7s cubic-bezier(.2,.7,.2,1)}
   .ring-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
@@ -82,6 +83,15 @@
     padding:7px 13px;border-radius:8px;cursor:pointer;transition:.15s;
   }
   .seg button.on{background:var(--surface-2);color:var(--text)}
+  .vfilter{
+    border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-family:var(--body);
+    font-size:13px;font-weight:500;padding:9px 30px 9px 13px;border-radius:11px;cursor:pointer;outline:none;
+    appearance:none;-webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a97a8' stroke-width='3'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat;background-position:right 11px center;
+  }
+  .vfilter:focus{border-color:var(--v-galaxy)}
+  .vfilter.active{border-color:var(--v-galaxy);color:var(--text)}
   .btn{
     border:1px solid var(--line);background:var(--ink-2);color:var(--text);font-family:var(--body);
     font-size:13px;font-weight:500;padding:9px 14px;border-radius:11px;cursor:pointer;transition:.15s;
@@ -167,8 +177,10 @@
   .foot{margin-top:26px;color:var(--faint);font-size:12px;line-height:1.6;text-align:center}
   @media(max-width:560px){
     .hero{gap:18px;padding:20px}
-    h1{font-size:24px}
-    .ring-wrap{width:104px;height:104px}
+    h1{font-size:23px}
+    .ring-wrap{width:92px;height:92px}
+    .ring-pct{font-size:24px}
+    .ring-sub{font-size:10px}
   }
 </style>
 </head>
@@ -210,6 +222,7 @@
       <button data-f="todo">Needs work</button>
       <button data-f="done">Maxed</button>
     </div>
+    <select id="variantFilter" class="vfilter" title="Show only one variant — handy during a themed event"></select>
     <button class="btn btn-primary" id="addBtn">＋ Add sprite</button>
     <button class="btn btn-ghost" id="exportBtn" title="Save a backup file of your progress">Export</button>
     <button class="btn btn-ghost" id="importBtn" title="Restore progress from a backup file">Import</button>
@@ -275,7 +288,7 @@ const SEED = [
 ];
 
 let state = { sprites: [], collected: {} }; // collected: { "<id>:<variant>": 1..5 }  (rank; >=1 means owned)
-let view = { filter:'all', q:'' };
+let view = { filter:'all', q:'', variant:'all' };
 let editingId = null;
 let memoryOnly = false;
 
@@ -283,6 +296,11 @@ const $ = s => document.querySelector(s);
 const uid = () => 'sp_' + Math.random().toString(36).slice(2,9);
 const key = (id,v) => id + ':' + v;
 const isMaxed = s => s.variants.length>0 && s.variants.every(v=>(state.collected[key(s.id,v)]||0)>=5);
+function distinctVariants(){
+  const seen = [];
+  for(const s of state.sprites) for(const v of s.variants) if(!seen.includes(v)) seen.push(v);
+  return seen;
+}
 const rarityColor = r => ({Rare:'var(--rare)',Epic:'var(--epic)',Legendary:'var(--legendary)',Mythic:'var(--mythic)'}[r]||'var(--muted)');
 
 function seedState(){
@@ -393,13 +411,26 @@ function render(){
   $('#tSprites').textContent = spritesDone+' / '+state.sprites.length;
   $('#tMaxed').textContent = maxed+' / '+total;
 
+  // populate the variant dropdown from whatever variants currently exist
+  const vsel = $('#variantFilter');
+  const dvs = distinctVariants();
+  if(view.variant!=='all' && !dvs.includes(view.variant)) view.variant = 'all';
+  vsel.innerHTML = `<option value="all">All variants</option>` +
+    dvs.map(v=>`<option value="${esc(v)}">${esc(v)} only</option>`).join('');
+  vsel.value = view.variant;
+  vsel.classList.toggle('active', view.variant!=='all');
+
   const grid = $('#grid');
   const q = view.q.trim().toLowerCase();
+  const vf = view.variant;
+  const vMaxed = s => (state.collected[key(s.id,vf)]||0) >= 5;
+
   const list = state.sprites.filter(s=>{
     if(q && !s.name.toLowerCase().includes(q)) return false;
-    const maxed = isMaxed(s);
-    if(view.filter==='done') return maxed;
-    if(view.filter==='todo') return !maxed;
+    if(vf!=='all' && !s.variants.includes(vf)) return false;     // sprite doesn't have this variant
+    const maxedNow = vf==='all' ? isMaxed(s) : vMaxed(s);
+    if(view.filter==='done') return maxedNow;
+    if(view.filter==='todo') return !maxedNow;
     return true;
   });
 
@@ -410,10 +441,11 @@ function render(){
   }
 
   grid.innerHTML = list.map(s=>{
+    const shown = vf==='all' ? s.variants : s.variants.filter(v=>v===vf);
     const owned = s.variants.filter(v=>(state.collected[key(s.id,v)]||0)>=1).length;
-    const done = isMaxed(s);
+    const done = vf==='all' ? isMaxed(s) : vMaxed(s);
     const w = s.variants.length ? Math.round(owned/s.variants.length*100) : 0;
-    const vrows = s.variants.map(v=>{
+    const vrows = shown.map(v=>{
       const r = state.collected[key(s.id,v)] || 0;
       const pips = [1,2,3,4,5].map(n=>
         `<button class="rp ${n<=r?'on':''}" data-v="${esc(v)}" data-id="${s.id}" data-variant="${esc(v)}" data-rank="${n}" aria-label="${esc(v)} rank ${n}"></button>`
@@ -427,6 +459,9 @@ function render(){
         <span class="vlvl ${r>=5?'max':''}">${lab}</span>
       </div>`;
     }).join('');
+    const miniRow = vf==='all'
+      ? `<div class="mini-row"><span>${owned}/${s.variants.length} owned</span><div class="mini"><i style="width:${w}%"></i></div></div>`
+      : '';
     return `<div class="card ${done?'done':''}" style="--accent:${esc(s.color)}">
       <div class="card-top">
         <span class="dot"></span>
@@ -437,7 +472,7 @@ function render(){
         <button class="edit-dots" data-edit="${s.id}" title="Edit">⋯</button>
       </div>
       <div class="vlist">${vrows || '<span style="color:var(--faint);font-size:12px">No variants</span>'}</div>
-      <div class="mini-row"><span>${owned}/${s.variants.length} owned</span><div class="mini"><i style="width:${w}%"></i></div></div>
+      ${miniRow}
     </div>`;
   }).join('');
 }
@@ -473,6 +508,7 @@ $('#filter').addEventListener('click', e=>{
   [...$('#filter').children].forEach(x=>x.classList.toggle('on',x===b));
   render();
 });
+$('#variantFilter').addEventListener('change', e=>{ view.variant = e.target.value; render(); });
 $('#resetBtn').addEventListener('click', ()=>{
   if(confirm('Reset to the default Season 3 roster? This clears your progress and any edits.')){
     seedState(); render(); save(false);
@@ -557,7 +593,7 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeEditor(); })
             3) re-upload this file. View counts on your GoatCounter dashboard.
      Until you do step 2 it simply does nothing — the app works fine either way.
 ============================================================ -->
-<script data-goatcounter="https://battlebaddies.goatcounter.com/count"
+<script data-goatcounter="https://YOURCODE.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
