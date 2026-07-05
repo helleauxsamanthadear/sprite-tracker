@@ -424,16 +424,24 @@ function render(){
   const grid = $('#grid');
   const q = view.q.trim().toLowerCase();
   const vf = view.variant;
-  const relVars = s => vf==='all' ? s.variants : [vf];   // variants this filter looks at
+  const relevant = s => vf==='all' ? s.variants : (s.variants.includes(vf) ? [vf] : []);
+  const rankOf = (s,v) => state.collected[key(s.id,v)]||0;
+  // which rows to actually display under the active filter
+  const rowShown = (s,v) => {
+    const r = rankOf(s,v);
+    if(view.filter==='uncollected') return r < 1;
+    if(view.filter==='unmaxed')     return r>=1 && r<5;
+    return true;                    // 'all' and 'done' show every relevant row
+  };
 
   const list = state.sprites.filter(s=>{
     if(q && !s.name.toLowerCase().includes(q)) return false;
-    if(vf!=='all' && !s.variants.includes(vf)) return false;   // sprite doesn't have this variant
+    const rel = relevant(s);
+    if(vf!=='all' && rel.length===0) return false;   // sprite doesn't have this variant
     if(view.filter==='all') return true;
-    const ranks = relVars(s).map(v=>state.collected[key(s.id,v)]||0);
-    if(view.filter==='uncollected') return ranks.some(r=>r<1);          // still missing a variant
-    if(view.filter==='unmaxed')     return ranks.some(r=>r>=1 && r<5);  // owned but below Lv 5
-    if(view.filter==='done')        return ranks.length>0 && ranks.every(r=>r>=5);
+    if(view.filter==='done')        return rel.length>0 && rel.every(v=>rankOf(s,v)>=5);
+    if(view.filter==='uncollected') return rel.some(v=>rankOf(s,v)<1);
+    if(view.filter==='unmaxed')     return rel.some(v=>{const r=rankOf(s,v); return r>=1 && r<5;});
     return true;
   });
 
@@ -444,12 +452,13 @@ function render(){
   }
 
   grid.innerHTML = list.map(s=>{
-    const shown = vf==='all' ? s.variants : s.variants.filter(v=>v===vf);
-    const owned = s.variants.filter(v=>(state.collected[key(s.id,v)]||0)>=1).length;
-    const done = vf==='all' ? isMaxed(s) : ((state.collected[key(s.id,vf)]||0) >= 5);
+    const rel = relevant(s);
+    const shown = rel.filter(v=>rowShown(s,v));
+    const owned = s.variants.filter(v=>rankOf(s,v)>=1).length;
+    const done = rel.length>0 && rel.every(v=>rankOf(s,v)>=5);
     const w = s.variants.length ? Math.round(owned/s.variants.length*100) : 0;
     const vrows = shown.map(v=>{
-      const r = state.collected[key(s.id,v)] || 0;
+      const r = rankOf(s,v);
       const pips = [1,2,3,4,5].map(n=>
         `<button class="rp ${n<=r?'on':''}" data-v="${esc(v)}" data-id="${s.id}" data-variant="${esc(v)}" data-rank="${n}" aria-label="${esc(v)} rank ${n}"></button>`
       ).join('');
