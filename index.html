@@ -77,10 +77,10 @@
   }
   .search input:focus{border-color:var(--v-galaxy);box-shadow:0 0 0 3px rgba(168,123,255,.18)}
   .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--faint)}
-  .seg{display:flex;background:var(--ink-2);border:1px solid var(--line);border-radius:11px;padding:3px}
+  .seg{display:flex;flex-wrap:wrap;background:var(--ink-2);border:1px solid var(--line);border-radius:11px;padding:3px}
   .seg button{
     border:0;background:transparent;color:var(--muted);font-family:var(--body);font-size:13px;font-weight:500;
-    padding:7px 13px;border-radius:8px;cursor:pointer;transition:.15s;
+    padding:7px 11px;border-radius:8px;cursor:pointer;transition:.15s;
   }
   .seg button.on{background:var(--surface-2);color:var(--text)}
   .vfilter{
@@ -219,7 +219,8 @@
     </div>
     <div class="seg" id="filter">
       <button data-f="all" class="on">All</button>
-      <button data-f="todo">Needs work</button>
+      <button data-f="uncollected">Not collected</button>
+      <button data-f="unmaxed">Not maxed</button>
       <button data-f="done">Maxed</button>
     </div>
     <select id="variantFilter" class="vfilter" title="Show only one variant — handy during a themed event"></select>
@@ -423,14 +424,16 @@ function render(){
   const grid = $('#grid');
   const q = view.q.trim().toLowerCase();
   const vf = view.variant;
-  const vMaxed = s => (state.collected[key(s.id,vf)]||0) >= 5;
+  const relVars = s => vf==='all' ? s.variants : [vf];   // variants this filter looks at
 
   const list = state.sprites.filter(s=>{
     if(q && !s.name.toLowerCase().includes(q)) return false;
-    if(vf!=='all' && !s.variants.includes(vf)) return false;     // sprite doesn't have this variant
-    const maxedNow = vf==='all' ? isMaxed(s) : vMaxed(s);
-    if(view.filter==='done') return maxedNow;
-    if(view.filter==='todo') return !maxedNow;
+    if(vf!=='all' && !s.variants.includes(vf)) return false;   // sprite doesn't have this variant
+    if(view.filter==='all') return true;
+    const ranks = relVars(s).map(v=>state.collected[key(s.id,v)]||0);
+    if(view.filter==='uncollected') return ranks.some(r=>r<1);          // still missing a variant
+    if(view.filter==='unmaxed')     return ranks.some(r=>r>=1 && r<5);  // owned but below Lv 5
+    if(view.filter==='done')        return ranks.length>0 && ranks.every(r=>r>=5);
     return true;
   });
 
@@ -443,7 +446,7 @@ function render(){
   grid.innerHTML = list.map(s=>{
     const shown = vf==='all' ? s.variants : s.variants.filter(v=>v===vf);
     const owned = s.variants.filter(v=>(state.collected[key(s.id,v)]||0)>=1).length;
-    const done = vf==='all' ? isMaxed(s) : vMaxed(s);
+    const done = vf==='all' ? isMaxed(s) : ((state.collected[key(s.id,vf)]||0) >= 5);
     const w = s.variants.length ? Math.round(owned/s.variants.length*100) : 0;
     const vrows = shown.map(v=>{
       const r = state.collected[key(s.id,v)] || 0;
