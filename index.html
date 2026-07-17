@@ -266,6 +266,8 @@ const DEFAULT_VARIANTS = ['Normal','Gold','Gummy','Galaxy'];
 const HOLO = [...DEFAULT_VARIANTS,'Holofoil'];
 // Sprites that gained a Holofoil variant on release day — used to upgrade saved lockers too.
 const HOLO_SPRITES = ['Water','Fire','Ghost','King','Striker'];
+// Bump on each new drop; list the drop's sprite names in addNewSprites() so existing lockers get them.
+const SPRITE_DROP = 2;
 
 const SEED = [
   {name:'Earth',      color:'#4ade80', rarity:'Rare',      variants:DEFAULT_VARIANTS},
@@ -282,6 +284,10 @@ const SEED = [
   {name:'Aura',       color:'#a78bfa', rarity:'Legendary', variants:DEFAULT_VARIANTS},
   {name:'Boss',       color:'#ef4444', rarity:'Legendary', variants:DEFAULT_VARIANTS},
   {name:'Grim Reaper',color:'#6b7280', rarity:'Legendary', variants:DEFAULT_VARIANTS},
+  {name:'Batman',     color:'#5c6b8a', rarity:'Legendary', variants:HOLO},
+  {name:'Air',        color:'#7dd3fc', rarity:'Rare',      variants:HOLO},
+  {name:'Seven',      color:'#8b5cf6', rarity:'Legendary', variants:HOLO},
+  {name:'Vini Jr.',   color:'#16a34a', rarity:'Epic',      variants:['Normal']},
   {name:'Zero Point', color:'#2dd4bf', rarity:'Mythic',    variants:DEFAULT_VARIANTS},
   {name:'Burnt Peanut',color:'#b45309',rarity:'Mythic',    variants:['Normal']},
 ];
@@ -305,7 +311,8 @@ const rarityColor = r => ({Rare:'var(--rare)',Epic:'var(--epic)',Legendary:'var(
 function seedState(){
   state.sprites = SEED.map(s => ({id:uid(), ...s, variants:[...s.variants]}));
   state.collected = {};
-  state.holoAdded = true;   // SEED already includes Holofoil
+  state.holoAdded = true;      // SEED already includes Holofoil
+  state.spriteDrop = SPRITE_DROP;  // SEED already includes the latest sprites
 }
 // Coerce any legacy data (old boolean checkmarks / per-sprite levels) into the rank model.
 function normalizeRanks(){
@@ -327,6 +334,19 @@ function addHolofoil(){
     if(HOLO_SPRITES.includes(s.name) && !s.variants.includes('Holofoil')) s.variants.push('Holofoil');
   }
   state.holoAdded = true;
+}
+// New sprites that dropped after launch — added to existing lockers once, in SEED order.
+// Guarded by a drop number so future drops keep working and deletions aren't undone.
+function addNewSprites(){
+  if((state.spriteDrop||1) >= SPRITE_DROP) return;
+  const dropNames = ['Batman','Air','Seven','Vini Jr.'];   // drop 2
+  const have = new Set(state.sprites.map(s=>s.name));
+  for(const seed of SEED){
+    if(dropNames.includes(seed.name) && !have.has(seed.name)){
+      state.sprites.push({id:uid(), ...seed, variants:[...seed.variants]});
+    }
+  }
+  state.spriteDrop = SPRITE_DROP;
 }
 
 /* ---------- persistence ----------
@@ -351,9 +371,10 @@ async function load(){
     try{
       state = JSON.parse(raw);
       normalizeRanks();
-      const before = state.holoAdded;
+      const hadHolo = state.holoAdded, hadDrop = (state.spriteDrop||1) >= SPRITE_DROP;
       addHolofoil();
-      if(!before) await save(true);   // persist the newly-granted Holofoil rows
+      addNewSprites();
+      if(!hadHolo || !hadDrop) await save(true);   // persist newly-granted variants/sprites
       return;
     }catch(e){}
   }
@@ -393,9 +414,10 @@ function importData(file){
       return toast('That isn’t a Sprite Locker backup');
     }
     data.sprites.forEach(s=>{ if(!s.id) s.id = uid(); if(!Array.isArray(s.variants)) s.variants = []; });
-    state = { sprites: data.sprites, collected: data.collected, holoAdded: !!data.holoAdded };
+    state = { sprites: data.sprites, collected: data.collected, holoAdded: !!data.holoAdded, spriteDrop: data.spriteDrop||1 };
     normalizeRanks();
-    addHolofoil();   // an older backup won't know about Holofoil yet
+    addHolofoil();      // an older backup won't know about Holofoil yet
+    addNewSprites();    // …or the latest sprite drop
     render(); save(false); toast('Progress restored');
   };
   reader.readAsText(file);
