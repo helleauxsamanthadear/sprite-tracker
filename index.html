@@ -129,7 +129,8 @@
   .vtog.on[data-v="Gummy"]{background:var(--v-gummy)}
   .vtog.on[data-v="Galaxy"]{background:var(--v-galaxy)}
   .vtog.on[data-v="Holofoil"]{background:linear-gradient(110deg,#7ee8fa,#c4a7ff 45%,#ffd6a5 75%,#7ee8fa)}
-  .vtog.on:not([data-v="Normal"]):not([data-v="Gold"]):not([data-v="Gummy"]):not([data-v="Galaxy"]):not([data-v="Holofoil"]){background:var(--accent,#9da7b3)}
+  .vtog.on[data-v="Cube"]{background:linear-gradient(135deg,#f87171,#b91c1c)}
+  .vtog.on:not([data-v="Normal"]):not([data-v="Gold"]):not([data-v="Gummy"]):not([data-v="Galaxy"]):not([data-v="Holofoil"]):not([data-v="Cube"]){background:var(--accent,#9da7b3)}
   /* max star: only meaningful once owned */
   .mx{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:6px;border:0;background:rgba(255,255,255,.07);color:var(--faint);font-size:11px;line-height:1;cursor:pointer;padding:0;flex:0 0 auto;transition:.15s}
   .vtog.on .mx{background:rgba(0,0,0,.2);color:rgba(0,0,0,.42)}
@@ -264,27 +265,33 @@
 const STORE_KEY = 'fn-sprite-locker-v1';
 const DEFAULT_VARIANTS = ['Normal','Gold','Gummy','Galaxy'];
 const HOLO = [...DEFAULT_VARIANTS,'Holofoil'];
-// Sprites that gained a Holofoil variant on release day — used to upgrade saved lockers too.
-const HOLO_SPRITES = ['Water','Fire','Ghost','King','Striker'];
+const withCube = vs => [...vs,'Cube'];
+// Variant roll-outs, in order. Bump VARIANT_GRANT and append an entry for each new one,
+// and existing saved lockers pick it up automatically on next load.
+const VARIANT_GRANTS = [
+  {v:1, variant:'Holofoil', sprites:['Water','Fire','Ghost','King','Striker']},
+  {v:2, variant:'Cube',     sprites:['Batman','Earth','Fire','Dream','Punk','Fishy','Boss','Grim Reaper']},
+];
+const VARIANT_GRANT = 2;
 // Bump on each new drop; list the drop's sprite names in addNewSprites() so existing lockers get them.
 const SPRITE_DROP = 2;
 
 const SEED = [
-  {name:'Earth',      color:'#4ade80', rarity:'Rare',      variants:DEFAULT_VARIANTS},
-  {name:'Fire',       color:'#ff6b3d', rarity:'Rare',      variants:HOLO},
+  {name:'Earth',      color:'#4ade80', rarity:'Rare',      variants:withCube(DEFAULT_VARIANTS)},
+  {name:'Fire',       color:'#ff6b3d', rarity:'Rare',      variants:withCube(HOLO)},
   {name:'Water',      color:'#38bdf8', rarity:'Rare',      variants:HOLO},
   {name:'Duck',       color:'#facc15', rarity:'Rare',      variants:DEFAULT_VARIANTS},
-  {name:'Fishy',      color:'#22d3ee', rarity:'Rare',      variants:DEFAULT_VARIANTS},
+  {name:'Fishy',      color:'#22d3ee', rarity:'Rare',      variants:withCube(DEFAULT_VARIANTS)},
   {name:'Demon',      color:'#c084fc', rarity:'Epic',      variants:DEFAULT_VARIANTS},
-  {name:'Dream',      color:'#818cf8', rarity:'Epic',      variants:DEFAULT_VARIANTS},
+  {name:'Dream',      color:'#818cf8', rarity:'Epic',      variants:withCube(DEFAULT_VARIANTS)},
   {name:'Ghost',      color:'#94a3b8', rarity:'Epic',      variants:HOLO},
-  {name:'Punk',       color:'#f472b6', rarity:'Epic',      variants:DEFAULT_VARIANTS},
+  {name:'Punk',       color:'#f472b6', rarity:'Epic',      variants:withCube(DEFAULT_VARIANTS)},
   {name:'Striker',    color:'#34d399', rarity:'Epic',      variants:HOLO},
   {name:'King',       color:'#fbbf24', rarity:'Legendary', variants:HOLO},
   {name:'Aura',       color:'#a78bfa', rarity:'Legendary', variants:DEFAULT_VARIANTS},
-  {name:'Boss',       color:'#ef4444', rarity:'Legendary', variants:DEFAULT_VARIANTS},
-  {name:'Grim Reaper',color:'#6b7280', rarity:'Legendary', variants:DEFAULT_VARIANTS},
-  {name:'Batman',     color:'#5c6b8a', rarity:'Legendary', variants:HOLO},
+  {name:'Boss',       color:'#ef4444', rarity:'Legendary', variants:withCube(DEFAULT_VARIANTS)},
+  {name:'Grim Reaper',color:'#6b7280', rarity:'Legendary', variants:withCube(DEFAULT_VARIANTS)},
+  {name:'Batman',     color:'#5c6b8a', rarity:'Legendary', variants:withCube(HOLO)},
   {name:'Air',        color:'#7dd3fc', rarity:'Rare',      variants:HOLO},
   {name:'Seven',      color:'#8b5cf6', rarity:'Legendary', variants:HOLO},
   {name:'Vini Jr.',   color:'#16a34a', rarity:'Epic',      variants:['Normal']},
@@ -311,8 +318,9 @@ const rarityColor = r => ({Rare:'var(--rare)',Epic:'var(--epic)',Legendary:'var(
 function seedState(){
   state.sprites = SEED.map(s => ({id:uid(), ...s, variants:[...s.variants]}));
   state.collected = {};
-  state.holoAdded = true;      // SEED already includes Holofoil
-  state.spriteDrop = SPRITE_DROP;  // SEED already includes the latest sprites
+  state.holoAdded = true;          // legacy flag, kept truthy
+  state.variantGrant = VARIANT_GRANT;  // SEED already includes all variants
+  state.spriteDrop = SPRITE_DROP;      // …and the latest sprites
 }
 // Coerce any legacy data (old boolean checkmarks / per-sprite levels) into the rank model.
 function normalizeRanks(){
@@ -326,14 +334,20 @@ function normalizeRanks(){
   }
   delete state.levels; // retired: rank now lives per-variant inside collected
 }
-// Release-day upgrade: give existing saved lockers the new Holofoil variant.
-// Runs once (guarded by a flag) so it never fights a deliberate removal later.
-function addHolofoil(){
-  if(state.holoAdded) return;
-  for(const s of state.sprites){
-    if(HOLO_SPRITES.includes(s.name) && !s.variants.includes('Holofoil')) s.variants.push('Holofoil');
+// Variant roll-outs: give existing saved lockers any variants added since they were last opened.
+// Each grant runs once (tracked by version) so deliberate removals aren't undone.
+function applyVariantGrants(){
+  let done = state.variantGrant;
+  if(done === undefined) done = state.holoAdded ? 1 : 0;   // migrate the old holoAdded flag
+  if(done >= VARIANT_GRANT){ state.variantGrant = done; return; }
+  for(const g of VARIANT_GRANTS){
+    if(g.v <= done) continue;
+    for(const s of state.sprites){
+      if(g.sprites.includes(s.name) && !s.variants.includes(g.variant)) s.variants.push(g.variant);
+    }
   }
-  state.holoAdded = true;
+  state.variantGrant = VARIANT_GRANT;
+  state.holoAdded = true;   // keep old flag truthy for any older copy of the app
 }
 // New sprites that dropped after launch — added to existing lockers once, in SEED order.
 // Guarded by a drop number so future drops keep working and deletions aren't undone.
@@ -371,10 +385,11 @@ async function load(){
     try{
       state = JSON.parse(raw);
       normalizeRanks();
-      const hadHolo = state.holoAdded, hadDrop = (state.spriteDrop||1) >= SPRITE_DROP;
-      addHolofoil();
+      const staleVariants = ((state.variantGrant===undefined ? (state.holoAdded?1:0) : state.variantGrant) < VARIANT_GRANT);
+      const staleSprites  = ((state.spriteDrop||1) < SPRITE_DROP);
+      applyVariantGrants();
       addNewSprites();
-      if(!hadHolo || !hadDrop) await save(true);   // persist newly-granted variants/sprites
+      if(staleVariants || staleSprites) await save(true);   // persist newly-granted variants/sprites
       return;
     }catch(e){}
   }
@@ -414,10 +429,10 @@ function importData(file){
       return toast('That isn’t a Sprite Locker backup');
     }
     data.sprites.forEach(s=>{ if(!s.id) s.id = uid(); if(!Array.isArray(s.variants)) s.variants = []; });
-    state = { sprites: data.sprites, collected: data.collected, holoAdded: !!data.holoAdded, spriteDrop: data.spriteDrop||1 };
+    state = { sprites: data.sprites, collected: data.collected, holoAdded: !!data.holoAdded, variantGrant: data.variantGrant, spriteDrop: data.spriteDrop||1 };
     normalizeRanks();
-    addHolofoil();      // an older backup won't know about Holofoil yet
-    addNewSprites();    // …or the latest sprite drop
+    applyVariantGrants();   // an older backup won't know about newer variants
+    addNewSprites();        // …or the latest sprite drop
     render(); save(false); toast('Progress restored');
   };
   reader.readAsText(file);
